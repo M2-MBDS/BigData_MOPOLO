@@ -128,7 +128,223 @@ kv-> delete kv -key /Smith/Bob/-/phonenumber
 
 
 
+# Chapitre 5
+* JKV.1 : conception d’un record
+* JKV.2 : Test de la classe existante HelloBigDataWorld.java
+* JKV.3 : Coder votre propre classe MobileClients.java
 
+## Exercice JKV.1 : conception d’un record
+
+<!-- -- Un exemple de Structure des enregistrements (majorKey-MinorKeys)
+/Nom/Prenom/Email/-minorKeys
+Exemple :
+/Nom/Prenom/Email/-
+/Nom/Prenom/Email/-/info/
+/Nom/Prenom/Email/-/info/adresse
+/Nom/Prenom/Email/-/appels
+/Nom/Prenom/Email/-/appels/derniersAppelsRecus
+/Nom/Prenom/Email/-/appels/derniersAppelsEmis
+/Nom/Prenom/Email/-/images
+/Nom/Prenom/Email/-/images/photoProfile
+/Nom/Prenom/Email/-/images/photoProfileAncienne
+/Nom/Prenom/Email/-/T�lMobile
+/Nom/Prenom/Email/-/DateAbonnement -->
+
+```java
+List<String> majorPath = new ArrayList<String>();
+majorPath.add("Nom");
+majorPath.add("Prenom");
+majorPath.add("Email");
+
+String minorComponent;
+minorComponent = 'info';
+
+Key myKey = Key.createKey(majorPath, minorComponent);
+```
+
+## Exercice JKV.2 : Test de la classe existante HelloBigDataWorld.java
+
+Compilation
+```
+javac -g -cp $KVHOME/lib/kvclient.jar:$KVHOME/tpnosql $KVHOME/tpnosql/hello/HelloBigDataWorld.java
+```
+Execution
+```
+java -Xmx256m -Xms256m  -cp $KVHOME/lib/kvclient.jar:$KVHOME/tpnosql hello.HelloBigDataWorld
+```
+
+## Exercice JKV.3 : Coder votre propre classe MobileClients.java
+Compilation
+```
+javac -g -cp $KVHOME/lib/kvclient.jar:$KVHOME/tpnosql $KVHOME/tpnosql/pkMobileClients/MobileClients.java
+```
+Execution
+```
+java -Xmx256m -Xms256m  -cp $KVHOME/lib/kvclient.jar:$KVHOME/tpnosql pkMobileClients.MobileClients
+```
+
+
+
+
+# Chapitre 6
+## Utilisation d’ l’interface CLI
+```sql
+execute 'drop table CRITERES';
+execute 'drop table CLIENT';
+execute 'drop table APPRECIATION';
+```
+
+```sql
+execute 'CREATE TABLE CRITERES (
+	CRITEREID INTEGER, 
+	TITRE STRING,
+	DESCRIPTION STRING,
+	PRIMARY KEY(CRITEREID)
+)';
+```
+```sql
+execute 'create table CLIENT (
+    ClIENTID INTEGER, 
+	NOM STRING, 
+	PRENOM STRING, 
+	CODEPOSTAL STRING,
+	VILLE STRING,
+	ADRESSE  STRING,
+	TELEPHONE STRING,
+	ANNEENAISS STRING,
+	primary key(shard(CLIENTID)))';
+```
+```sql
+execute 'create table APPRECIATION(
+	VOLID INTEGER, 
+	CRITEREID INTEGER, 
+	CLIENTID INTEGER, 
+	DATEVOL  STRING, 
+	NOTE ENUM (EXCELLENT,TRES_BIEN, BIEN, 
+	MOYEN, PASSABLE, MEDIOCRE
+	),
+	primary key (shard(VOLID, CRITEREID, CLIENTID, DATEVOL))
+	)';
+```
+Insertion des lignes
+```sql
+put table -name criteres -json
+'{"CRITEREID":1, 
+"TITRE":"Qualit� du site reservation",
+"DESCRIPTION": "Evaluer la qualit� du site de r�servation"
+}';
+
+put table -name criteres -json
+'{"CRITEREID":2, 
+"TITRE":"Prix",
+"DESCRIPTION": "Evaluer le prix de la r�servation"
+}';
+
+put table -name criteres -json
+'{"CRITEREID":3, 
+"TITRE":"Nourriture � bord",
+"DESCRIPTION": "Evaluer la qualit� de la nourriture � bord"
+}';
+
+put table -name criteres -json
+'{"CRITEREID":4, 
+"TITRE":"Qualit� du si�ge",
+"DESCRIPTION": "Evaluer la qualit� du si�ge"
+}';
+
+put table -name criteres -json
+'{"CRITEREID":5, 
+"TITRE":"Qualit� du si�ge",
+"DESCRIPTION": "Evaluer la qualit� du si�ge"
+}';
+
+put table -name criteres -json
+'{"CRITEREID":6, 
+"TITRE":"Accueil au guichet",
+"DESCRIPTION": "Evaluer la qualit� accueil au guichet"
+}';
+
+put table -name criteres -json
+'{"CRITEREID":7, 
+"TITRE":"Accueil � bord",
+"DESCRIPTION": "Evaluer la qualit� accueil � bord"
+}';
+```
+Recherche
+```sql
+
+```
+Compilation
+```sql
+javac -g -cp $KVHOME/lib/kvclient.jar:$KVHOME/tpnosql $KVHOME/tpnosql/airbase/Airbase.java  
+```
+Execution
+```sql
+java -Xmx256m -Xms256m  -cp $KVHOME/lib/kvclient.jar:$KVHOME/tpnosql airbase.Airbase
+```
+
+
+
+
+
+
+
+# Chapitre 7
+## Exercice 7.1 : Création des tables externes HIVE pointant vers les tables physiques Oracle Nosql
+
+### étape 1 : creation de tables dans la base nosql
+```
+Fait de l'exercice precedent
+```
+### étape 2 : creation de tables externes dans la base Hive
+```sql
+-- table externe Hive CRITERES_ONS_EXT
+drop table CRITERES_ONS_EXT;
+
+CREATE EXTERNAL TABLE  CRITERES_ONS_EXT  (CRITEREID int, TITRE string, DESCRIPTION string)
+STORED BY 'oracle.kv.hadoop.hive.table.TableStorageHandler'
+TBLPROPERTIES (
+"oracle.kv.kvstore" = "kvstore",
+"oracle.kv.hosts" = "bigdatalite.localdomain:5000", 
+"oracle.kv.hadoop.hosts" = "bigdatalite.localdomain/127.0.0.1", 
+"oracle.kv.tableName" = "criteres");
+
+
+-- table externe Hive APPRECIATION_ONS_EXT
+drop table APPRECIATION_ONS_EXT;
+
+CREATE EXTERNAL TABLE APPRECIATION_ONS_EXT(VOLID int, CRITEREID int, CLIENTID INT,  DATEVOL  string, NOTE string)
+STORED BY 'oracle.kv.hadoop.hive.table.TableStorageHandler'
+TBLPROPERTIES (
+"oracle.kv.kvstore" = "kvstore",
+"oracle.kv.hosts" = "bigdatalite.localdomain:5000", 
+"oracle.kv.hadoop.hosts" = "bigdatalite.localdomain/127.0.0.1", 
+"oracle.kv.tableName" = "appreciation");
+
+
+-- table externe Hive CLIENT_ONS_EXT
+drop  table CLIENT_ONS_EXT;
+
+create external table CLIENT_ONS_EXT (ClIENTID INT, NOM STRING, PRENOM STRING, CODEPOSTAL STRING,
+VILLE STRING, ADRESSE  STRING, TELEPHONE STRING, ANNEENAISS STRING)
+STORED BY 'oracle.kv.hadoop.hive.table.TableStorageHandler'
+TBLPROPERTIES (
+"oracle.kv.kvstore" = "kvstore",
+"oracle.kv.hosts" = "bigdatalite.localdomain:5000", 
+"oracle.kv.hadoop.hosts" = "bigdatalite.localdomain/127.0.0.1", 
+"oracle.kv.tableName" = "client");
+```
+
+
+## Exercice 7.3 : Création des tables externes HIVE pointant vers des fichiers physiques Hadoop Hdfs
+
+
+
+## Exercice 7.3 : Executer le script airbase.sql contenant les tables PILOTE, AVION et VOL
+
+
+
+# HISTORY CMD
 <!-- 
 1 connect store -name kvstore
 2 ddl add-schema -file /home/oracle/Developper/schema_UserInfo.avsc
